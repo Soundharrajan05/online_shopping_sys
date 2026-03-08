@@ -83,15 +83,15 @@ def seed_database():
             # Create categories
             print("1. Creating categories...")
             categories = [
-                ('Electronics', 'Electronic devices and gadgets'),
-                ('Books', 'Books and educational materials'),
-                ('Clothing', 'Apparel and fashion items')
+                ('Electronics',),
+                ('Books',),
+                ('Clothing',)
             ]
             
-            for name, desc in categories:
+            for (name,) in categories:
                 cursor.execute(
-                    "INSERT INTO categories (category_name, description) VALUES (%s, %s)",
-                    (name, desc)
+                    "INSERT INTO categories (category_name) VALUES (%s)",
+                    (name,)
                 )
             print("   ✓ 3 categories created")
             
@@ -101,7 +101,7 @@ def seed_database():
             
             admin_password = generate_password_hash('admin123')
             cursor.execute("""
-                INSERT INTO users (username, email, password_hash, role)
+                INSERT INTO users (name, email, password, role)
                 VALUES (%s, %s, %s, %s)
             """, ('admin', 'admin@shop.com', admin_password, 'admin'))
             print("   ✓ Admin: admin@shop.com / admin123")
@@ -110,7 +110,7 @@ def seed_database():
             print("3. Creating customer user...")
             customer_password = generate_password_hash('customer123')
             cursor.execute("""
-                INSERT INTO users (username, email, password_hash, role)
+                INSERT INTO users (name, email, password, role)
                 VALUES (%s, %s, %s, %s)
             """, ('customer', 'customer@test.com', customer_password, 'customer'))
             print("   ✓ Customer: customer@test.com / customer123")
