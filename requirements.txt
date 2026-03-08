@@ -5,7 +5,7 @@ Flask==3.0.0
 mysql-connector-python==8.2.0
 
 # PostgreSQL Database Connector - For Render.com deployment
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
 
 # Werkzeug - WSGI utility library (includes password hashing)
 werkzeug==3.0.1
