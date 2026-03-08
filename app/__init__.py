@@ -426,6 +426,109 @@ def create_app(config_name='default'):
             error_trace = traceback.format_exc().replace('\n', '<br>')
             return f'<strong style="color: red;">Error adding products:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
     
+    # Real login test - mimics exact login flow
+    @app.route('/real-login-test', methods=['GET', 'POST'])
+    def real_login_test():
+        """Test real login flow with detailed error reporting"""
+        from flask import request
+        from app.models.user import User
+        from app.utils.validation import validate_email
+        
+        if request.method == 'POST':
+            email = request.form.get('email', '')
+            password = request.form.get('password', '')
+            
+            results = []
+            results.append("<h2>Real Login Test</h2>")
+            results.append(f"<p>Email: {email}</p>")
+            results.append(f"<p>Password: {'*' * len(password)}</p><hr>")
+            
+            try:
+                # Step 1: Validate input
+                results.append("<h3>Step 1: Input Validation</h3>")
+                if not email or not password:
+                    results.append("<p style='color: red;'>✗ Email and password are required</p>")
+                    return "<br>".join(results)
+                results.append("<p style='color: green;'>✓ Both fields provided</p>")
+                
+                # Step 2: Sanitize email
+                results.append("<h3>Step 2: Email Sanitization</h3>")
+                email_valid, sanitized_email, email_error = validate_email(email)
+                if not email_valid:
+                    results.append(f"<p style='color: red;'>✗ {email_error}</p>")
+                    return "<br>".join(results)
+                results.append(f"<p style='color: green;'>✓ Email valid: {sanitized_email}</p>")
+                
+                # Step 3: Find user
+                results.append("<h3>Step 3: Find User</h3>")
+                user = User.find_by_email(sanitized_email)
+                if not user:
+                    results.append(f"<p style='color: red;'>✗ User not found</p>")
+                    return "<br>".join(results)
+                results.append(f"<p style='color: green;'>✓ User found: {user.name} (ID: {user.user_id})</p>")
+                
+                # Step 4: Verify password
+                results.append("<h3>Step 4: Password Verification</h3>")
+                password_match = user.verify_password(password)
+                if not password_match:
+                    results.append(f"<p style='color: red;'>✗ Password does not match</p>")
+                    return "<br>".join(results)
+                results.append(f"<p style='color: green;'>✓ Password matches!</p>")
+                
+                # Step 5: Create session
+                results.append("<h3>Step 5: Create Session</h3>")
+                session['user_id'] = user.user_id
+                session['role'] = user.role
+                session['name'] = user.name
+                results.append(f"<p style='color: green;'>✓ Session created</p>")
+                results.append(f"<p>user_id: {session.get('user_id')}</p>")
+                results.append(f"<p>role: {session.get('role')}</p>")
+                results.append(f"<p>name: {session.get('name')}</p>")
+                
+                # Step 6: Redirect
+                results.append("<h3>Step 6: Redirect</h3>")
+                if user.role == 'admin':
+                    redirect_url = url_for('admin.admin_dashboard')
+                    results.append(f"<p>Should redirect to: {redirect_url}</p>")
+                else:
+                    redirect_url = url_for('user.browse_products')
+                    results.append(f"<p>Should redirect to: {redirect_url}</p>")
+                
+                results.append(f"<hr><p style='color: green; font-size: 18px;'><strong>✓ LOGIN SUCCESSFUL!</strong></p>")
+                results.append(f"<p><a href='{redirect_url}'>Go to {redirect_url}</a></p>")
+                results.append(f"<p><a href='/auth/login'>Try real login page</a></p>")
+                
+            except Exception as e:
+                import traceback
+                results.append(f"<hr><h3 style='color: red;'>ERROR CAUGHT!</h3>")
+                results.append(f"<p><strong>Error Type:</strong> {type(e).__name__}</p>")
+                results.append(f"<p><strong>Error Message:</strong> {str(e)}</p>")
+                results.append(f"<pre>{traceback.format_exc()}</pre>")
+                results.append(f"<hr><p style='color: red;'>This is why login is failing!</p>")
+            
+            return "<br>".join(results)
+        
+        # GET request - show form
+        return """
+        <h2>Real Login Test</h2>
+        <p>This mimics the exact login flow and shows detailed errors</p>
+        <form method="POST">
+            <p>
+                <label>Email:</label><br>
+                <input type="email" name="email" required value="soundharrajank129@gmail.com" style="width: 300px; padding: 5px;">
+            </p>
+            <p>
+                <label>Password:</label><br>
+                <input type="password" name="password" required value="password123" style="width: 300px; padding: 5px;">
+            </p>
+            <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
+                Test Login
+            </button>
+        </form>
+        <hr>
+        <p><a href="/test-db">Check Database</a> | <a href="/auth/login">Real Login Page</a></p>
+        """
+    
     # Comprehensive login test endpoint
     @app.route('/test-login/<email>/<password>')
     def test_login(email, password):
