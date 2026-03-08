@@ -149,5 +149,68 @@ def create_app(config_name='default'):
         # Not authenticated - redirect to login
         return redirect(url_for('auth.login'))
     
+    # Test endpoint to check database status (for debugging)
+    @app.route('/test-db')
+    def test_db():
+        """Test database connection and tables - for debugging only"""
+        from app.database.db_universal import Database
+        
+        results = []
+        
+        # Test 1: Connection
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT version()")
+            version = cursor.fetchone()[0]
+            results.append(f"✓ Database connected: {version[:50]}")
+            cursor.close()
+            Database.release_connection(conn)
+        except Exception as e:
+            results.append(f"✗ Connection failed: {str(e)}")
+            return "<br>".join(results), 500
+        
+        # Test 2: Tables
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+                ORDER BY table_name
+            """)
+            tables = [row[0] for row in cursor.fetchall()]
+            
+            if tables:
+                results.append(f"✓ Found {len(tables)} tables: {', '.join(tables)}")
+            else:
+                results.append("✗ No tables found! Run auto_init_db.py")
+            
+            cursor.close()
+            Database.release_connection(conn)
+        except Exception as e:
+            results.append(f"✗ Table check failed: {str(e)}")
+        
+        # Test 3: Users
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM users")
+            count = cursor.fetchone()[0]
+            results.append(f"✓ Users table has {count} users")
+            
+            if count > 0:
+                cursor.execute("SELECT email, role FROM users LIMIT 5")
+                users = cursor.fetchall()
+                results.append(f"Sample users: {', '.join([f'{email} ({role})' for email, role in users])}")
+            
+            cursor.close()
+            Database.release_connection(conn)
+        except Exception as e:
+            results.append(f"✗ Users table check failed: {str(e)}")
+        
+        return "<br>".join(results)
+    
     return app
 
