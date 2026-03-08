@@ -372,8 +372,9 @@ def place_order():
         cursor.execute("""
             INSERT INTO orders (user_id, total_amount, order_status)
             VALUES (%s, %s, 'Pending')
+            RETURNING order_id
         """, (user_id, total_amount))
-        order_id = cursor.lastrowid
+        order_id = cursor.fetchone()[0]
         
         # 6. Create order_items records
         for product_id, quantity, price, _, _ in cart_items:
