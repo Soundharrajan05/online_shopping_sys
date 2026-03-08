@@ -800,5 +800,134 @@ def create_app(config_name='default'):
         <p><a href="/test-db">Check Database Status</a></p>
         """
     
+    # Test newly registered user
+    @app.route('/test-new-user/<email>')
+    def test_new_user(email):
+        """Test if newly registered user can be found and password verified"""
+        from app.database.db_universal import Database
+        from werkzeug.security import check_password_hash, generate_password_hash
+        
+        results = []
+        results.append("<h2>New User Registration Test</h2>")
+        results.append(f"<p>Testing email: {email}</p><hr>")
+        
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            
+            # Find user
+            cursor.execute(
+                "SELECT user_id, name, email, password, role, created_at FROM users WHERE email = %s",
+                (email,)
+            )
+            user_row = cursor.fetchone()
+            
+            if not user_row:
+                results.append(f"<p style='color: red;'>✗ User not found: {email}</p>")
+                results.append(f"<p>User was not created in database</p>")
+                cursor.close()
+                Database.release_connection(conn)
+                return "<br>".join(results)
+            
+            user_id, name, db_email, password_hash, role, created_at = user_row
+            
+            results.append(f"<p style='color: green;'>✓ User found in database</p>")
+            results.append(f"<p><strong>User ID:</strong> {user_id}</p>")
+            results.append(f"<p><strong>Name:</strong> {name}</p>")
+            results.append(f"<p><strong>Email:</strong> {db_email}</p>")
+            results.append(f"<p><strong>Role:</strong> {role}</p>")
+            results.append(f"<p><strong>Created:</strong> {created_at}</p>")
+            results.append(f"<p><strong>Password hash:</strong> {password_hash[:80]}...</p>")
+            
+            # Check hash format
+            results.append("<hr><h3>Password Hash Analysis:</h3>")
+            if password_hash.startswith('pbkdf2:sha256:'):
+                results.append("<p style='color: green;'>✓ Hash format correct (pbkdf2:sha256)</p>")
+                parts = password_hash.split('$')
+                results.append(f"<p>Hash parts: {len(parts)} (should be 3)</p>")
+            else:
+                results.append(f"<p style='color: red;'>✗ Hash format incorrect</p>")
+                results.append(f"<p>Expected: pbkdf2:sha256:...</p>")
+                results.append(f"<p>Got: {password_hash[:50]}...</p>")
+            
+            # Test password verification
+            results.append("<hr><h3>Password Verification Test:</h3>")
+            results.append("<form method='POST' action='/test-password-verify'>")
+            results.append(f"<input type='hidden' name='email' value='{email}'>")
+            results.append("<p><label>Enter the password you used during registration:</label><br>")
+            results.append("<input type='password' name='password' required style='width: 300px; padding: 5px;'></p>")
+            results.append("<button type='submit' style='padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;'>Test Password</button>")
+            results.append("</form>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+            
+        except Exception as e:
+            import traceback
+            results.append(f"<hr><p style='color: red;'><strong>Error:</strong> {str(e)}</p>")
+            results.append(f"<pre>{traceback.format_exc()}</pre>")
+        
+        return "<br>".join(results)
+    
+    # Test password verification
+    @app.route('/test-password-verify', methods=['POST'])
+    def test_password_verify():
+        """Verify password for a user"""
+        from flask import request
+        from app.database.db_universal import Database
+        from werkzeug.security import check_password_hash
+        
+        email = request.form.get('email')
+        password = request.form.get('password')
+        
+        results = []
+        results.append("<h2>Password Verification Result</h2>")
+        results.append(f"<p>Email: {email}</p>")
+        results.append(f"<p>Password: {'*' * len(password)}</p><hr>")
+        
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                "SELECT password FROM users WHERE email = %s",
+                (email,)
+            )
+            row = cursor.fetchone()
+            
+            if not row:
+                results.append("<p style='color: red;'>✗ User not found</p>")
+            else:
+                password_hash = row[0]
+                results.append(f"<p>Password hash: {password_hash[:80]}...</p>")
+                
+                # Test verification
+                match = check_password_hash(password_hash, password)
+                
+                if match:
+                    results.append("<p style='color: green; font-size: 18px;'><strong>✓ PASSWORD MATCHES!</strong></p>")
+                    results.append("<p>You can login with this password</p>")
+                    results.append(f"<p><a href='/auth/login'>Go to Login Page</a></p>")
+                else:
+                    results.append("<p style='color: red; font-size: 18px;'><strong>✗ PASSWORD DOES NOT MATCH</strong></p>")
+                    results.append("<p>The password you entered doesn't match the stored hash</p>")
+                    results.append("<p>Possible issues:</p>")
+                    results.append("<ul>")
+                    results.append("<li>You entered a different password than during registration</li>")
+                    results.append("<li>Password was modified after registration</li>")
+                    results.append("<li>Hash algorithm mismatch</li>")
+                    results.append("</ul>")
+                    results.append(f"<p><a href='/reset-password/{email}'>Reset password to 'password123'</a></p>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+            
+        except Exception as e:
+            import traceback
+            results.append(f"<hr><p style='color: red;'><strong>Error:</strong> {str(e)}</p>")
+            results.append(f"<pre>{traceback.format_exc()}</pre>")
+        
+        return "<br>".join(results)
+    
     return app
 
