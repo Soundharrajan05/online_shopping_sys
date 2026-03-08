@@ -426,6 +426,92 @@ def create_app(config_name='default'):
             error_trace = traceback.format_exc().replace('\n', '<br>')
             return f'<strong style="color: red;">Error adding products:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
     
+    # Comprehensive login test endpoint
+    @app.route('/test-login/<email>/<password>')
+    def test_login(email, password):
+        """Test login with detailed debugging - shows every step"""
+        from app.database.db_universal import Database
+        from werkzeug.security import check_password_hash
+        from app.utils.validation import validate_email
+        
+        results = []
+        results.append("<h2>Login Test - Step by Step</h2>")
+        results.append(f"<p><strong>Testing:</strong> {email} / {password}</p><hr>")
+        
+        try:
+            # Step 1: Validate email
+            results.append("<h3>Step 1: Email Validation</h3>")
+            email_valid, sanitized_email, email_error = validate_email(email)
+            if not email_valid:
+                results.append(f"<p style='color: red;'>✗ Email validation failed: {email_error}</p>")
+                results.append(f"<p>Original: {email}</p>")
+                results.append(f"<p>Sanitized: {sanitized_email}</p>")
+                return "<br>".join(results)
+            results.append(f"<p style='color: green;'>✓ Email valid</p>")
+            results.append(f"<p>Original: {email}</p>")
+            results.append(f"<p>Sanitized: {sanitized_email}</p>")
+            
+            # Step 2: Find user in database
+            results.append("<hr><h3>Step 2: Database Lookup</h3>")
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT user_id, name, email, password, role FROM users WHERE email = %s",
+                (sanitized_email,)
+            )
+            user_row = cursor.fetchone()
+            
+            if not user_row:
+                results.append(f"<p style='color: red;'>✗ User not found in database</p>")
+                results.append(f"<p>Searched for: {sanitized_email}</p>")
+                cursor.close()
+                Database.release_connection(conn)
+                return "<br>".join(results)
+            
+            user_id, name, db_email, password_hash, role = user_row
+            results.append(f"<p style='color: green;'>✓ User found</p>")
+            results.append(f"<p>User ID: {user_id}</p>")
+            results.append(f"<p>Name: {name}</p>")
+            results.append(f"<p>Email: {db_email}</p>")
+            results.append(f"<p>Role: {role}</p>")
+            results.append(f"<p>Password hash: {password_hash[:60]}...</p>")
+            
+            # Step 3: Verify password
+            results.append("<hr><h3>Step 3: Password Verification</h3>")
+            results.append(f"<p>Testing password: '{password}'</p>")
+            
+            password_match = check_password_hash(password_hash, password)
+            
+            if password_match:
+                results.append(f"<p style='color: green; font-size: 18px;'><strong>✓ PASSWORD MATCHES!</strong></p>")
+                results.append(f"<p>Login should succeed with these credentials</p>")
+                results.append(f"<hr><p><a href='/auth/login'>Try logging in now</a></p>")
+            else:
+                results.append(f"<p style='color: red; font-size: 18px;'><strong>✗ PASSWORD DOES NOT MATCH</strong></p>")
+                results.append(f"<p>The password '{password}' is incorrect for this user</p>")
+                
+                # Test common passwords
+                results.append("<hr><h3>Testing Common Passwords:</h3>")
+                test_passwords = ['password123', 'customer123', 'admin123', 'test123', '12345678', 'password']
+                for test_pwd in test_passwords:
+                    if check_password_hash(password_hash, test_pwd):
+                        results.append(f"<p style='color: green;'>✓ Correct password is: <strong>{test_pwd}</strong></p>")
+                        results.append(f"<p><a href='/test-login/{email}/{test_pwd}'>Test with this password</a></p>")
+                        break
+                else:
+                    results.append(f"<p style='color: orange;'>Password is not any of: {', '.join(test_passwords)}</p>")
+                    results.append(f"<p>Use <a href='/reset-password/{email}'>reset password</a> to set it to 'password123'</p>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+            
+        except Exception as e:
+            import traceback
+            results.append(f"<hr><p style='color: red;'><strong>Error:</strong> {str(e)}</p>")
+            results.append(f"<pre>{traceback.format_exc()}</pre>")
+        
+        return "<br>".join(results)
+    
     # Reset all passwords endpoint
     @app.route('/reset-all-passwords')
     def reset_all_passwords():
