@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details - Online Shopping System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Order Details</h1>
+        
+        <div class="mb-3">
+            <a href="{{ url_for('admin.view_all_orders') }}" class="btn btn-secondary">
+                &larr; Back to Orders
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Order Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Order Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Order ID:</strong> {{ order.order_id }}</p>
+                <p><strong>Order Date:</strong> {{ order.order_date.strftime('%Y-%m-%d %H:%M:%S') if order.order_date else 'N/A' }}</p>
+                <p><strong>Total Amount:</strong> ${{ "%.2f"|format(order.total_amount) }}</p>
+                <p>
+                    <strong>Status:</strong>
+                    {% if order.order_status == 'Pending' %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif order.order_status == 'Shipped' %}
+                        <span class="badge bg-info">Shipped</span>
+                    {% elif order.order_status == 'Delivered' %}
+                        <span class="badge bg-success">Delivered</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ order.order_status }}</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Customer Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Customer ID:</strong> {{ customer.user_id }}</p>
+                <p><strong>Name:</strong> {{ customer.name }}</p>
+                <p><strong>Email:</strong> {{ customer.email }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Order Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">Update Order Status</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.order_id) }}">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
+                            <label for="order_status" class="form-label">Select New Status:</label>
+                            <select class="form-select" id="order_status" name="order_status" required>
+                                <option value="Pending" {% if order.order_status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Shipped" {% if order.order_status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                                <option value="Delivered" {% if order.order_status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Items -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Order Items</h5>
+            </div>
+            <div class="card-body">
+                {% if order_items %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Product</th>
+                                <th>Description</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td>{{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}</td>
+                                <td>${{ "%.2f"|format(item.price) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ "%.2f"|format(item.subtotal) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                <td><strong>${{ "%.2f"|format(order.total_amount) }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    No items found for this order.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

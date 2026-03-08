@@ -1,0 +1,26 @@
+# Flask Framework - Web application framework
+Flask==3.0.0
+
+# MySQL Database Connector - Database driver for MySQL
+mysql-connector-python==8.2.0
+
+# PostgreSQL Database Connector - For Render.com deployment
+psycopg2-binary==2.9.9
+
+# Werkzeug - WSGI utility library (includes password hashing)
+werkzeug==3.0.1
+
+# Gunicorn - Production WSGI server
+gunicorn==21.2.0
+
+# Python-dotenv - Environment variable management
+python-dotenv==1.0.0
+
+# Testing Framework - Unit testing
+pytest==7.4.3
+
+# Property-Based Testing - Hypothesis for property tests
+hypothesis==6.92.1
+
+# Test Coverage - Code coverage measurement
+pytest-cov==4.1.0

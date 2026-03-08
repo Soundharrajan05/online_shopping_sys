@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Online Shopping System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <h2 class="mb-4">Checkout</h2>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart_items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.image_url %}
+                                        <img src="{{ item.image_url }}" alt="{{ item.product_name }}" 
+                                             class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% endif %}
+                                        <span>{{ item.product_name }}</span>
+                                    </div>
+                                </td>
+                                <td>${{ "%.2f"|format(item.price) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ "%.2f"|format(item.subtotal) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                <td><strong class="text-primary fs-5">${{ "%.2f"|format(total) }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> By placing this order, you agree to our terms and conditions. 
+            Stock will be reserved and your cart will be cleared.
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{{ url_for('user.view_cart') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Cart
+            </a>
+            <form method="POST" action="{{ url_for('user.place_order') }}" class="d-inline">
+                <button type="submit" class="btn btn-success btn-lg">
+                    Place Order <i class="bi bi-check-circle"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

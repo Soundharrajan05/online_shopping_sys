@@ -1,0 +1,24 @@
+# ========================================
+# DEPLOYMENT COMMANDS - Copy and Paste These
+# ========================================
+
+# Step 1: Initialize Git (if not already done)
+git init
+
+# Step 2: Add all files
+git add .
+
+# Step 3: Commit
+git commit -m "Ready for Render deployment"
+
+# Step 4: Create a new repository on GitHub first, then run:
+# (Replace YOUR_USERNAME and YOUR_REPO with your actual GitHub username and repo name)
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+
+# Step 5: Push to GitHub
+git branch -M main
+git push -u origin main
+
+# ========================================
+# DONE! Now go to Render.com
+# ========================================
