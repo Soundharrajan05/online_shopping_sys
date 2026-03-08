@@ -426,10 +426,116 @@ def create_app(config_name='default'):
             error_trace = traceback.format_exc().replace('\n', '<br>')
             return f'<strong style="color: red;">Error adding products:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
     
+    # Reset all passwords endpoint
+    @app.route('/reset-all-passwords')
+    def reset_all_passwords():
+        """Reset all user passwords to 'password123' - DEBUG ONLY"""
+        from app.database.db_universal import Database
+        from werkzeug.security import generate_password_hash
+        
+        results = []
+        results.append("<h2>Reset All Passwords</h2>")
+        
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            
+            # Get all users
+            cursor.execute("SELECT user_id, email, name, role FROM users ORDER BY user_id")
+            users = cursor.fetchall()
+            
+            results.append(f"<p>Found {len(users)} users. Resetting all passwords to: <strong>password123</strong></p>")
+            
+            # Reset password for each user
+            new_password = 'password123'
+            hashed = generate_password_hash(new_password, method='pbkdf2:sha256')
+            
+            for user_id, email, name, role in users:
+                cursor.execute(
+                    "UPDATE users SET password = %s WHERE user_id = %s",
+                    (hashed, user_id)
+                )
+                results.append(f"<br>✓ {email} ({role}) - Password reset")
+            
+            conn.commit()
+            cursor.close()
+            Database.release_connection(conn)
+            
+            results.append("<hr>")
+            results.append("<p style='color: green;'><strong>✓ All passwords reset successfully!</strong></p>")
+            results.append("<p>All users can now login with password: <strong>password123</strong></p>")
+            results.append("<hr>")
+            results.append("<h3>Test Login:</h3>")
+            results.append("<p>Try any of these:</p>")
+            results.append("<ul>")
+            for user_id, email, name, role in users[:5]:
+                results.append(f"<li>{email} / password123</li>")
+            results.append("</ul>")
+            results.append("<p><a href='/auth/login'>Go to Login Page</a> | <a href='/test-db'>Check Database</a></p>")
+            
+        except Exception as e:
+            import traceback
+            results.append(f"<p style='color: red;'>✗ Error: {str(e)}</p>")
+            results.append(f"<pre>{traceback.format_exc()}</pre>")
+        
+        return "<br>".join(results)
+    
+    # Password reset endpoint for debugging
+    @app.route('/reset-password/<email>')
+    def reset_password(email):
+        """Reset password for a user - DEBUG ONLY"""
+        from app.database.db_universal import Database
+        from werkzeug.security import generate_password_hash
+        
+        results = []
+        results.append(f"<h2>Password Reset</h2>")
+        results.append(f"<p>Resetting password for: {email}</p>")
+        
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if user exists
+            cursor.execute("SELECT user_id, name FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            
+            if not user:
+                results.append(f"<p style='color: red;'>✗ User not found: {email}</p>")
+                results.append("<p><a href='/test-db'>Back to database status</a></p>")
+            else:
+                user_id, name = user
+                results.append(f"<p>✓ Found user: {name} (ID: {user_id})</p>")
+                
+                # Reset password to 'password123'
+                new_password = 'password123'
+                hashed = generate_password_hash(new_password, method='pbkdf2:sha256')
+                
+                cursor.execute(
+                    "UPDATE users SET password = %s WHERE user_id = %s",
+                    (hashed, user_id)
+                )
+                conn.commit()
+                
+                results.append(f"<p style='color: green;'>✓ Password reset successfully!</p>")
+                results.append(f"<p><strong>New credentials:</strong></p>")
+                results.append(f"<p>Email: {email}<br>Password: {new_password}</p>")
+                results.append(f"<p><a href='/auth/login'>Go to Login Page</a></p>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+            
+        except Exception as e:
+            import traceback
+            results.append(f"<p style='color: red;'>✗ Error: {str(e)}</p>")
+            results.append(f"<pre>{traceback.format_exc()}</pre>")
+        
+        return "<br>".join(results)
+    
     # Debug registration endpoint
     @app.route('/debug-register', methods=['GET', 'POST'])
     def debug_register():
         """Debug registration issues"""
+        from flask import request
         from app.database.db_universal import Database
         from werkzeug.security import generate_password_hash
         
