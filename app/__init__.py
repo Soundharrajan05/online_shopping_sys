@@ -252,23 +252,51 @@ def create_app(config_name='default'):
     # Add products endpoint
     @app.route('/add-products')
     def add_products():
-        """Add sample products to database"""
+        """Add sample categories and products to database"""
         from app.database.db_universal import Database
         
         try:
             conn = Database.get_connection()
             cursor = conn.cursor()
             
-            # Check if products already exist
-            cursor.execute("SELECT COUNT(*) FROM products")
-            count = cursor.fetchone()[0]
+            results = []
             
-            if count > 0:
+            # Step 1: Add categories first
+            cursor.execute("SELECT COUNT(*) FROM categories")
+            cat_count = cursor.fetchone()[0]
+            
+            if cat_count == 0:
+                results.append("Adding categories...")
+                categories = [
+                    ('Electronics',),
+                    ('Books',),
+                    ('Clothing',)
+                ]
+                
+                for (name,) in categories:
+                    cursor.execute(
+                        "INSERT INTO categories (category_name) VALUES (%s)",
+                        (name,)
+                    )
+                conn.commit()
+                results.append(f"✓ Added {len(categories)} categories")
+            else:
+                results.append(f"✓ Categories already exist ({cat_count} categories)")
+            
+            # Step 2: Check if products already exist
+            cursor.execute("SELECT COUNT(*) FROM products")
+            prod_count = cursor.fetchone()[0]
+            
+            if prod_count > 0:
                 cursor.close()
                 Database.release_connection(conn)
-                return f'<strong style="color: orange;">Products already exist ({count} products)</strong><br><br><a href="/test-db">Check database status</a><br><a href="/user/products">Browse products</a>'
+                results.append(f"✓ Products already exist ({prod_count} products)")
+                html = '<br>'.join(results)
+                html += '<br><br><a href="/test-db">Check database status</a><br><a href="/user/products">Browse products</a>'
+                return html
             
-            # Add products
+            # Step 3: Add products
+            results.append("Adding products...")
             products = [
                 ('HP Victus Gaming Laptop', 1, 899.99, 25, 'High-performance gaming laptop', 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500'),
                 ('Dell XPS 13', 1, 1299.99, 15, 'Premium ultrabook', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=500'),
@@ -292,7 +320,12 @@ def create_app(config_name='default'):
             cursor.close()
             Database.release_connection(conn)
             
-            return f'<strong style="color: green;">✓ Successfully added {len(products)} products!</strong><br><br><a href="/test-db">Check database status</a><br><a href="/user/products">Browse products</a>'
+            results.append(f"✓ Added {len(products)} products")
+            results.append("<br><strong style='color: green;'>✓ Setup complete!</strong>")
+            
+            html = '<br>'.join(results)
+            html += '<br><br><a href="/test-db">Check database status</a><br><a href="/user/products">Browse products</a>'
+            return html
         except Exception as e:
             import traceback
             error_trace = traceback.format_exc().replace('\n', '<br>')
