@@ -140,11 +140,6 @@ class UniversalDatabase:
                     cls.release_connection(connection)
                 else:
                     connection.close()
-            if connection:
-                if cls._db_type == 'postgresql':
-                    cls.release_connection(connection)
-                else:
-                    connection.close()
 
 
 # Maintain backward compatibility
