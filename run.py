@@ -29,6 +29,15 @@ config_name = os.environ.get('FLASK_CONFIG') or 'development'
 # Create Flask application using the factory pattern
 app = create_app(config_name)
 
+# Auto-initialize database on Render (production only, no Shell needed!)
+if config_name == 'production' and os.environ.get('DATABASE_URL'):
+    try:
+        from auto_init_db import main as auto_init
+        print("Checking database initialization...")
+        auto_init()
+    except Exception as e:
+        print(f"Note: Auto-init check: {e}")
+
 
 if __name__ == '__main__':
     # Run the application
