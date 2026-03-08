@@ -192,23 +192,65 @@ def create_app(config_name='default'):
         except Exception as e:
             results.append(f"✗ Table check failed: {str(e)}")
         
-        # Test 3: Users
+        # Test 3: Users (show ALL users)
         try:
             conn = Database.get_connection()
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM users")
             count = cursor.fetchone()[0]
-            results.append(f"✓ Users table has {count} users")
+            results.append(f"<br>✓ Users table has {count} users")
             
             if count > 0:
-                cursor.execute("SELECT email, role FROM users LIMIT 5")
+                cursor.execute("SELECT user_id, email, role, name FROM users ORDER BY user_id")
                 users = cursor.fetchall()
-                results.append(f"Sample users: {', '.join([f'{email} ({role})' for email, role in users])}")
+                results.append("<br><strong>All users:</strong>")
+                for user_id, email, role, name in users:
+                    results.append(f"&nbsp;&nbsp;{user_id}. {email} ({role}) - {name}")
             
             cursor.close()
             Database.release_connection(conn)
         except Exception as e:
             results.append(f"✗ Users table check failed: {str(e)}")
+        
+        # Test 4: Categories
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM categories")
+            cat_count = cursor.fetchone()[0]
+            results.append(f"<br>✓ Categories: {cat_count}")
+            
+            if cat_count > 0:
+                cursor.execute("SELECT category_id, category_name FROM categories")
+                categories = cursor.fetchall()
+                for cat_id, cat_name in categories:
+                    results.append(f"&nbsp;&nbsp;{cat_id}. {cat_name}")
+            else:
+                results.append("&nbsp;&nbsp;<a href='/add-products'>Click to add categories and products</a>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+        except Exception as e:
+            results.append(f"✗ Categories check failed: {str(e)}")
+        
+        # Test 5: Products
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM products")
+            prod_count = cursor.fetchone()[0]
+            results.append(f"<br>✓ Products: {prod_count}")
+            
+            if prod_count == 0:
+                results.append("&nbsp;&nbsp;<a href='/add-products'>Click to add products</a>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+        except Exception as e:
+            results.append(f"✗ Products check failed: {str(e)}")
+        
+        results.append("<br><br><strong>Quick Links:</strong>")
+        results.append("<a href='/add-products'>Add Products</a> | <a href='/auth/login'>Login</a> | <a href='/auth/register'>Register</a>")
         
         return "<br>".join(results)
     
@@ -248,6 +290,59 @@ def create_app(config_name='default'):
             import traceback
             error_trace = traceback.format_exc().replace('\n', '<br>')
             return f'<strong style="color: red;">Error:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
+    
+    # Debug login endpoint
+    @app.route('/debug-login')
+    def debug_login():
+        """Debug login issues - test password verification"""
+        from app.database.db_universal import Database
+        from werkzeug.security import check_password_hash
+        
+        results = []
+        results.append("<h2>Login Debug Tool</h2>")
+        
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            
+            # Get all users with their password hashes
+            cursor.execute("SELECT user_id, email, password, role, name FROM users ORDER BY user_id")
+            users = cursor.fetchall()
+            
+            results.append(f"<p>Found {len(users)} users in database:</p>")
+            
+            for user_id, email, password_hash, role, name in users:
+                results.append(f"<hr><strong>User {user_id}:</strong> {email}")
+                results.append(f"<br>Name: {name}")
+                results.append(f"<br>Role: {role}")
+                results.append(f"<br>Password hash: {password_hash[:50]}...")
+                
+                # Test common passwords
+                test_passwords = ['customer123', 'admin123', 'password', '123456']
+                for test_pwd in test_passwords:
+                    if check_password_hash(password_hash, test_pwd):
+                        results.append(f"<br><span style='color: green;'>✓ Password is: {test_pwd}</span>")
+                        break
+                else:
+                    results.append(f"<br><span style='color: red;'>✗ Password is NOT any of: {', '.join(test_passwords)}</span>")
+            
+            cursor.close()
+            Database.release_connection(conn)
+            
+            results.append("<hr><h3>Test Login:</h3>")
+            results.append("<p>Try these credentials:</p>")
+            results.append("<ul>")
+            results.append("<li>customer@test.com / customer123</li>")
+            results.append("<li>admin@shop.com / admin123</li>")
+            results.append("</ul>")
+            results.append("<a href='/auth/login'>Go to Login Page</a>")
+            
+        except Exception as e:
+            import traceback
+            results.append(f"<p style='color: red;'>Error: {str(e)}</p>")
+            results.append(f"<pre>{traceback.format_exc()}</pre>")
+        
+        return "<br>".join(results)
     
     # Add products endpoint
     @app.route('/add-products')
@@ -330,6 +425,85 @@ def create_app(config_name='default'):
             import traceback
             error_trace = traceback.format_exc().replace('\n', '<br>')
             return f'<strong style="color: red;">Error adding products:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
+    
+    # Debug registration endpoint
+    @app.route('/debug-register', methods=['GET', 'POST'])
+    def debug_register():
+        """Debug registration issues"""
+        from app.database.db_universal import Database
+        from werkzeug.security import generate_password_hash
+        
+        if request.method == 'POST':
+            email = request.form.get('email', '')
+            password = request.form.get('password', 'test123')
+            name = request.form.get('name', 'Test User')
+            
+            results = []
+            results.append(f"<h2>Registration Debug</h2>")
+            results.append(f"<p>Attempting to register: {email}</p>")
+            
+            try:
+                # Check if email exists
+                conn = Database.get_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT user_id, email FROM users WHERE email = %s", (email,))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    results.append(f"<p style='color: red;'>✗ Email already exists: User ID {existing[0]}</p>")
+                else:
+                    results.append(f"<p style='color: green;'>✓ Email is available</p>")
+                    
+                    # Try to create user
+                    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+                    results.append(f"<p>✓ Password hashed successfully</p>")
+                    
+                    cursor.execute("""
+                        INSERT INTO users (name, email, password, role)
+                        VALUES (%s, %s, %s, %s)
+                        RETURNING user_id
+                    """, (name, email, hashed_password, 'customer'))
+                    
+                    user_id = cursor.fetchone()[0]
+                    conn.commit()
+                    
+                    results.append(f"<p style='color: green;'>✓ User created successfully! User ID: {user_id}</p>")
+                    results.append(f"<p>Login with: {email} / {password}</p>")
+                    results.append(f"<a href='/auth/login'>Go to Login</a>")
+                
+                cursor.close()
+                Database.release_connection(conn)
+                
+            except Exception as e:
+                import traceback
+                results.append(f"<p style='color: red;'>✗ Error: {str(e)}</p>")
+                results.append(f"<pre>{traceback.format_exc()}</pre>")
+            
+            return "<br>".join(results)
+        
+        # GET request - show form
+        return """
+        <h2>Debug Registration</h2>
+        <form method="POST">
+            <p>
+                <label>Email:</label><br>
+                <input type="email" name="email" required placeholder="test@example.com" style="width: 300px; padding: 5px;">
+            </p>
+            <p>
+                <label>Name:</label><br>
+                <input type="text" name="name" value="Test User" style="width: 300px; padding: 5px;">
+            </p>
+            <p>
+                <label>Password:</label><br>
+                <input type="text" name="password" value="test123" style="width: 300px; padding: 5px;">
+            </p>
+            <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
+                Test Registration
+            </button>
+        </form>
+        <hr>
+        <p><a href="/test-db">Check Database Status</a></p>
+        """
     
     return app
 
