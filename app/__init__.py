@@ -249,5 +249,54 @@ def create_app(config_name='default'):
             error_trace = traceback.format_exc().replace('\n', '<br>')
             return f'<strong style="color: red;">Error:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
     
+    # Add products endpoint
+    @app.route('/add-products')
+    def add_products():
+        """Add sample products to database"""
+        from app.database.db_universal import Database
+        
+        try:
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if products already exist
+            cursor.execute("SELECT COUNT(*) FROM products")
+            count = cursor.fetchone()[0]
+            
+            if count > 0:
+                cursor.close()
+                Database.release_connection(conn)
+                return f'<strong style="color: orange;">Products already exist ({count} products)</strong><br><br><a href="/test-db">Check database status</a><br><a href="/user/products">Browse products</a>'
+            
+            # Add products
+            products = [
+                ('HP Victus Gaming Laptop', 1, 899.99, 25, 'High-performance gaming laptop', 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500'),
+                ('Dell XPS 13', 1, 1299.99, 15, 'Premium ultrabook', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=500'),
+                ('iPhone 14 Pro', 1, 999.99, 50, 'Latest iPhone model', 'https://images.unsplash.com/photo-1678652197831-2d180705cd2c?w=500'),
+                ('Samsung Galaxy S23', 1, 899.99, 40, 'Flagship Android phone', 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500'),
+                ('Clean Code by Robert Martin', 2, 44.99, 50, 'Software engineering book', 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500'),
+                ('The Pragmatic Programmer', 2, 49.99, 30, 'Programming best practices', 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500'),
+                ('Men\'s T-Shirt', 3, 19.99, 100, 'Comfortable cotton t-shirt', 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500'),
+                ('Women\'s Dress', 3, 59.99, 50, 'Elegant summer dress', 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500'),
+                ('Sony WH-1000XM5', 1, 399.99, 20, 'Noise-cancelling headphones', 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500'),
+                ('MacBook Pro 14"', 1, 1999.99, 10, 'Apple laptop for professionals', 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500'),
+            ]
+            
+            for name, cat_id, price, stock, desc, img in products:
+                cursor.execute("""
+                    INSERT INTO products (product_name, category_id, price, stock_quantity, description, image_url)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (name, cat_id, price, stock, desc, img))
+            
+            conn.commit()
+            cursor.close()
+            Database.release_connection(conn)
+            
+            return f'<strong style="color: green;">✓ Successfully added {len(products)} products!</strong><br><br><a href="/test-db">Check database status</a><br><a href="/user/products">Browse products</a>'
+        except Exception as e:
+            import traceback
+            error_trace = traceback.format_exc().replace('\n', '<br>')
+            return f'<strong style="color: red;">Error adding products:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
+    
     return app
 
