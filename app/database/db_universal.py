@@ -111,10 +111,6 @@ class UniversalDatabase:
             connection = cls.get_connection()
             cursor = connection.cursor()
             
-            # Adapt query for PostgreSQL if needed
-            if cls._db_type == 'postgresql':
-                query = query.replace('%s', '%s')  # Already compatible
-            
             cursor.execute(query, params or ())
             
             if fetch:
@@ -124,8 +120,9 @@ class UniversalDatabase:
                 connection.commit()
                 if query.strip().upper().startswith('INSERT'):
                     if cls._db_type == 'postgresql':
-                        # PostgreSQL uses RETURNING for last insert id
-                        return cursor.fetchone()[0] if cursor.rowcount > 0 else None
+                        # PostgreSQL: Get the last inserted ID
+                        # For SERIAL columns, we need to get currval
+                        return cursor.lastrowid if hasattr(cursor, 'lastrowid') else None
                     else:
                         return cursor.lastrowid
                 else:
@@ -138,6 +135,11 @@ class UniversalDatabase:
         finally:
             if cursor:
                 cursor.close()
+            if connection:
+                if cls._db_type == 'postgresql':
+                    cls.release_connection(connection)
+                else:
+                    connection.close()
             if connection:
                 if cls._db_type == 'postgresql':
                     cls.release_connection(connection)

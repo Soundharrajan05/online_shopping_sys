@@ -43,14 +43,33 @@ class User:
         Raises:
             Exception: If user creation fails
         """
+        from app.database.db_universal import Database
+        
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        
+        # Use RETURNING for PostgreSQL to get the inserted ID
         query = """
             INSERT INTO users (name, email, password, role)
             VALUES (%s, %s, %s, %s)
+            RETURNING user_id
         """
         params = (name, email, hashed_password, role)
-        user_id = execute_query(query, params, fetch=False)
-        return user_id
+        
+        # Execute and fetch the returned ID
+        connection = Database.get_connection()
+        cursor = connection.cursor()
+        try:
+            cursor.execute(query, params)
+            user_id = cursor.fetchone()[0]
+            connection.commit()
+            cursor.close()
+            Database.release_connection(connection)
+            return user_id
+        except Exception as e:
+            connection.rollback()
+            cursor.close()
+            Database.release_connection(connection)
+            raise
     
     @staticmethod
     def find_by_email(email):
