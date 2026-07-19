@@ -257,6 +257,41 @@ If you ran the seed data script, you can use these credentials:
 8. **Payment**: Simulate payment processing
 9. **Order History**: View your orders at `/user/orders`
 
+## Vercel Deployment
+
+This project can be deployed on Vercel using Python Serverless Function support. The Vercel configuration is provided in `vercel.json`, and the Flask application entrypoint is located at `api/index.py`.
+
+### Deployment Steps
+
+1. Install dependencies locally and verify the application:
+   ```bash
+   pip install -r requirements.txt
+   python api/index.py
+   ```
+
+2. Create a Vercel project and set the following environment variables:
+   - `FLASK_CONFIG=production`
+   - `SECRET_KEY=<your-secret-key>`
+   - `DATABASE_URL=<your-database-connection-url>`
+
+3. Deploy to Vercel:
+   ```bash
+   vercel --prod
+   ```
+
+4. After deployment, open the project URL to access the application.
+
+### Vercel Environment Variables
+
+Vercel deployments must use a managed database that is accessible from the Vercel runtime. Local MySQL on your machine will not be available to the deployed app.
+
+- `DATABASE_URL`: Recommended PostgreSQL connection string for Vercel deployments, for example:
+  `postgresql://user:password@host:port/database`
+- `SECRET_KEY`: Flask secret key used for sessions
+- `FLASK_CONFIG`: Set to `production`
+
+If `DATABASE_URL` is missing during a Vercel deployment, the app will display a clear initialization error instead of failing silently.
+
 ### Administrator Workflow
 
 1. **Login**: Login with admin credentials at `/auth/login`

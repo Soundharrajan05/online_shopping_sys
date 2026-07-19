@@ -53,8 +53,8 @@ def create_app(config_name='default'):
     # secure: Ensures cookies only sent over HTTPS (should be True in production)
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    if not app.config.get('TESTING'):
-        app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+    # Enable secure cookies outside of testing, especially for production HTTPS deployments
+    app.config['SESSION_COOKIE_SECURE'] = not app.config.get('DEBUG', False)
     
     # Initialize database connection pool
     # This creates a connection pool for efficient database access

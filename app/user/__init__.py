@@ -369,12 +369,19 @@ def place_order():
         total_amount = sum(quantity * float(price) for _, quantity, price, _, _ in cart_items)
         
         # 5. Create order record with 'Pending' status
-        cursor.execute("""
-            INSERT INTO orders (user_id, total_amount, order_status)
-            VALUES (%s, %s, 'Pending')
-            RETURNING order_id
-        """, (user_id, total_amount))
-        order_id = cursor.fetchone()[0]
+        if Database._db_type == 'postgresql':
+            cursor.execute("""
+                INSERT INTO orders (user_id, total_amount, order_status)
+                VALUES (%s, %s, 'Pending')
+                RETURNING order_id
+            """, (user_id, total_amount))
+            order_id = cursor.fetchone()[0]
+        else:
+            cursor.execute("""
+                INSERT INTO orders (user_id, total_amount, order_status)
+                VALUES (%s, %s, 'Pending')
+            """, (user_id, total_amount))
+            order_id = cursor.lastrowid if hasattr(cursor, 'lastrowid') else None
         
         # 6. Create order_items records
         for product_id, quantity, price, _, _ in cart_items:

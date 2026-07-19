@@ -47,20 +47,28 @@ class User:
         
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         
-        # Use RETURNING for PostgreSQL to get the inserted ID
-        query = """
-            INSERT INTO users (name, email, password, role)
-            VALUES (%s, %s, %s, %s)
-            RETURNING user_id
-        """
+        if Database._db_type == 'postgresql':
+            query = """
+                INSERT INTO users (name, email, password, role)
+                VALUES (%s, %s, %s, %s)
+                RETURNING user_id
+            """
+        else:
+            query = """
+                INSERT INTO users (name, email, password, role)
+                VALUES (%s, %s, %s, %s)
+            """
         params = (name, email, hashed_password, role)
         
-        # Execute and fetch the returned ID
+        # Execute and fetch the inserted ID
         connection = Database.get_connection()
         cursor = connection.cursor()
         try:
             cursor.execute(query, params)
-            user_id = cursor.fetchone()[0]
+            if Database._db_type == 'postgresql':
+                user_id = cursor.fetchone()[0]
+            else:
+                user_id = cursor.lastrowid if hasattr(cursor, 'lastrowid') else None
             connection.commit()
             cursor.close()
             Database.release_connection(connection)
