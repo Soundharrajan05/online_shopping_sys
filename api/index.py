@@ -12,6 +12,9 @@ load_dotenv(os.path.join(ROOT_DIR, '.env'))
 
 config_name = os.environ.get('FLASK_CONFIG') or 'production'
 
+# Create a default Flask app object so Vercel can detect an entrypoint
+app = Flask(__name__)
+
 
 def make_error_app(message):
     error_app = Flask(__name__)
@@ -64,6 +67,10 @@ except Exception as exc:
             'Set DATABASE_URL to a valid PostgreSQL connection string and redeploy.'
         )
     app = make_error_app(error_message)
+
+# Provide aliases for Python deployment platforms that look for `application` or `handler`
+application = app
+handler = app
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=app.config.get('DEBUG', False))
