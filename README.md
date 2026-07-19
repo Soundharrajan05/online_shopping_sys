@@ -199,10 +199,10 @@ export FLASK_CONFIG=development
 # Production
 export FLASK_CONFIG=production
 export SECRET_KEY=your-secret-key-here
-export MYSQL_HOST=your-db-host
-export MYSQL_USER=your-db-user
-export MYSQL_PASSWORD=your-db-password
-export MYSQL_DATABASE=your-db-name
+export DB_HOST=your-db-host
+export DB_USER=your-db-user
+export DB_PASSWORD=your-db-password
+export DB_NAME=your-db-name
 
 # Test
 export FLASK_CONFIG=test
@@ -289,6 +289,9 @@ Vercel deployments must use a managed database that is accessible from the Verce
   `postgresql://user:password@host:port/database`
 - `SECRET_KEY`: Flask secret key used for sessions
 - `FLASK_CONFIG`: Set to `production`
+- `PGSSLMODE`: Optional; set to `require` if your PostgreSQL provider requires SSL connections
+
+This app also auto-enables SSL for remote PostgreSQL hosts when `DATABASE_URL` is used without an explicit `sslmode` parameter.
 
 If `DATABASE_URL` is missing during a Vercel deployment, the app will display a clear initialization error instead of failing silently.
 

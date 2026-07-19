@@ -46,17 +46,30 @@ class UniversalDatabase:
         """Initialize PostgreSQL connection pool"""
         import psycopg2
         from psycopg2 import pool
+        from urllib.parse import parse_qs
         
         parsed = urlparse(database_url)
+        query_params = parse_qs(parsed.query)
+        sslmode = query_params.get('sslmode', [None])[0]
+        if not sslmode:
+            sslmode = os.environ.get('PGSSLMODE')
+        if not sslmode and parsed.hostname not in ('localhost', '127.0.0.1'):
+            sslmode = 'require'
+        
+        connection_args = {
+            'host': parsed.hostname,
+            'port': parsed.port or 5432,
+            'user': parsed.username,
+            'password': parsed.password,
+            'database': parsed.path[1:],  # Remove leading '/'
+        }
+        if sslmode:
+            connection_args['sslmode'] = sslmode
         
         cls._pool = pool.SimpleConnectionPool(
             1,  # minconn
             10,  # maxconn
-            host=parsed.hostname,
-            port=parsed.port or 5432,
-            user=parsed.username,
-            password=parsed.password,
-            database=parsed.path[1:]  # Remove leading '/'
+            **connection_args
         )
     
     @classmethod

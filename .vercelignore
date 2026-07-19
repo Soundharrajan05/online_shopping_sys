@@ -6,6 +6,7 @@ __pycache__/
 *.swo
 *.tmp
 .env
+run.py
 tests/
 htmlcov/
 .vscode/

@@ -3,7 +3,7 @@ Database adapter to support both MySQL (local) and PostgreSQL (production)
 """
 
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 
 def get_db_config():
@@ -20,8 +20,14 @@ def get_db_config():
         # Parse PostgreSQL URL from Render.com
         # Format: postgresql://user:password@host:port/database
         parsed = urlparse(database_url)
-        
-        return {
+        query_params = parse_qs(parsed.query)
+        sslmode = query_params.get('sslmode', [None])[0]
+        if not sslmode:
+            sslmode = os.environ.get('PGSSLMODE')
+        if not sslmode and parsed.hostname not in ('localhost', '127.0.0.1'):
+            sslmode = 'require'
+
+        config = {
             'type': 'postgresql',
             'host': parsed.hostname,
             'port': parsed.port or 5432,
@@ -29,6 +35,9 @@ def get_db_config():
             'password': parsed.password,
             'database': parsed.path[1:],  # Remove leading '/'
         }
+        if sslmode:
+            config['sslmode'] = sslmode
+        return config
     else:
         # Use MySQL configuration from environment variables (local development)
         return {
@@ -58,14 +67,20 @@ def get_connection_pool(config):
         import psycopg2
         from psycopg2 import pool
         
+        connection_args = {
+            'host': config['host'],
+            'port': config['port'],
+            'user': config['user'],
+            'password': config['password'],
+            'database': config['database'],
+        }
+        if config.get('sslmode'):
+            connection_args['sslmode'] = config['sslmode']
+
         return pool.SimpleConnectionPool(
             1,  # minconn
             5,  # maxconn
-            host=config['host'],
-            port=config['port'],
-            user=config['user'],
-            password=config['password'],
-            database=config['database']
+            **connection_args
         )
     else:
         # Use mysql-connector for MySQL
