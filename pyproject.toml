@@ -1,0 +1,7 @@
+[project]
+name = "online-shopping-sys"
+version = "0.1.0"
+dependencies = []
+
+[tool.vercel]
+entrypoint = "run:app"
