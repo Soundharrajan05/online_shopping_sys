@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
-from app import create_app
-
 # Load environment variables from .env when running locally
 load_dotenv(os.path.join(ROOT_DIR, '.env'))
 
@@ -43,6 +41,8 @@ def make_error_app(message):
 
 
 try:
+    from app import create_app
+
     if os.environ.get('VERCEL') and config_name == 'production':
         missing = []
         if not os.environ.get('SECRET_KEY'):
