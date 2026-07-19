@@ -1,10 +1,16 @@
 import os
+import sys
 from flask import Flask, render_template_string
 from dotenv import load_dotenv
+
+# Ensure the project root is on sys.path so `from app import create_app` works
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, ROOT_DIR)
+
 from app import create_app
 
 # Load environment variables from .env when running locally
-load_dotenv()
+load_dotenv(os.path.join(ROOT_DIR, '.env'))
 
 config_name = os.environ.get('FLASK_CONFIG') or 'production'
 
