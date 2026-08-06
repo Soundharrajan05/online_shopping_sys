@@ -1,81 +1,37 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
+dist/
+build/
 
-# Virtual Environment
-env/
+# Virtual environment
 venv/
-ENV/
-env.bak/
-venv.bak/
 .venv/
+env/
 
 # Environment variables
 .env
 .env.local
-.env.*.local
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
-*.swo
 *~
 .DS_Store
+Thumbs.db
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
 .hypothesis/
-*.cover
-.tox/
-
-# Database
-*.db
-*.sqlite3
-*.sql.backup
 
 # Logs
 *.log
 logs/
 
-# OS
-Thumbs.db
-.DS_Store
-
-# Project specific
-debug_*.py
-test_*.py
-diagnose_*.py
-check_*.py
-verify_*.py
-update_*.py
-create_test_*.py
-*.ps1
-
-# Documentation (organized in docs/)
-*_GUIDE.md
-*_FIX*.md
-*_STEPS.md
-*_CHECKLIST.md
-*_SETUP*.md
-deploy_commands.txt
+# Kiro spec files
+.kiro/

@@ -33,7 +33,10 @@ class UniversalDatabase:
         if cls._connection is not None and cls._is_connection_alive():
             return
 
-        database_url = os.environ.get('DATABASE_URL', '')
+        # Check DATABASE_URL from both the passed config dict and os.environ
+        # (Flask app.config is a dict that mirrors the Config class values)
+        cfg = config or {}
+        database_url = cfg.get('DATABASE_URL') or os.environ.get('DATABASE_URL', '')
 
         # Normalise SQLAlchemy-style prefix to plain mysql://
         if database_url.startswith('mysql+'):
@@ -43,7 +46,7 @@ class UniversalDatabase:
             if database_url and database_url.startswith('mysql'):
                 cls._init_mysql_from_url(database_url)
             else:
-                cls._init_mysql_from_config(config or {})
+                cls._init_mysql_from_config(cfg)
 
             print("MySQL database connection initialised.")
         except Exception as e:
