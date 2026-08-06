@@ -7,9 +7,6 @@ mysql-connector-python==8.2.0
 # Werkzeug - WSGI utility library (includes password hashing)
 werkzeug==3.0.1
 
-# Gunicorn - Production WSGI server
-gunicorn==21.2.0
-
 # Python-dotenv - Environment variable management
 python-dotenv==1.0.0
 

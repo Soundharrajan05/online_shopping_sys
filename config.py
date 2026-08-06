@@ -35,8 +35,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     SESSION_TYPE = 'filesystem'
     
-    # Database configuration
-    # Support both DATABASE_URL (Render.com) and individual variables (local)
+    # Database configuration — supports both DATABASE_URL and individual DB_* variables
     DATABASE_URL = os.environ.get('DATABASE_URL')
     DB_HOST = os.environ.get('DB_HOST') or 'localhost'
     DB_USER = os.environ.get('DB_USER') or 'root'

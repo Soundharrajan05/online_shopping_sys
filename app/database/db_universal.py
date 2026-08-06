@@ -35,6 +35,10 @@ class UniversalDatabase:
 
         database_url = os.environ.get('DATABASE_URL', '')
 
+        # Normalise SQLAlchemy-style prefix to plain mysql://
+        if database_url.startswith('mysql+'):
+            database_url = 'mysql' + database_url[database_url.index('://'):]
+
         try:
             if database_url and database_url.startswith('mysql'):
                 cls._init_mysql_from_url(database_url)
