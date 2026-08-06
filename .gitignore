@@ -63,8 +63,19 @@ Thumbs.db
 .DS_Store
 
 # Project specific
-debug_products.py
-test_browse_route.py
-create_test_customer.py
-update_product_images.py
-verify_seed_data.py
+debug_*.py
+test_*.py
+diagnose_*.py
+check_*.py
+verify_*.py
+update_*.py
+create_test_*.py
+*.ps1
+
+# Documentation (organized in docs/)
+*_GUIDE.md
+*_FIX*.md
+*_STEPS.md
+*_CHECKLIST.md
+*_SETUP*.md
+deploy_commands.txt

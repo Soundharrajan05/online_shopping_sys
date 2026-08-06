@@ -46,6 +46,7 @@ def make_error_app(message):
 try:
     from app import create_app
 
+    # Verify required environment variables for Vercel production deployment
     if os.environ.get('VERCEL') and config_name == 'production':
         missing = []
         if not os.environ.get('SECRET_KEY'):
@@ -61,10 +62,12 @@ try:
     app = create_app(config_name)
 except Exception as exc:
     error_message = str(exc)
+    # Provide helpful error message for missing MySQL database configuration
+    # Expected format: mysql://username:password@host:port/database
     if os.environ.get('VERCEL') and not os.environ.get('DATABASE_URL'):
         error_message = (
-            'Vercel deployment requires a managed database and DATABASE_URL environment variable. '
-            'Set DATABASE_URL to a valid PostgreSQL connection string and redeploy.'
+            'Vercel deployment requires a MySQL database and DATABASE_URL environment variable. '
+            'Set DATABASE_URL to a valid MySQL connection string (format: mysql://username:password@host:port/database) and redeploy.'
         )
     app = make_error_app(error_message)
 

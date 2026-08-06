@@ -58,7 +58,7 @@ def create_app(config_name='default'):
     
     # Initialize database connection pool
     # This creates a connection pool for efficient database access
-    # Use universal database module that supports both MySQL and PostgreSQL
+    # Use universal database module that supports MySQL
     from app.database.db_universal import init_db
     init_db(app.config)
     
@@ -149,7 +149,7 @@ def create_app(config_name='default'):
         # Not authenticated - redirect to login
         return redirect(url_for('auth.login'))
     
-    # Test endpoint to check database status (for debugging)
+    # Test endpoint to check database status (development only)
     @app.route('/test-db')
     def test_db():
         """Test database connection and tables - for debugging only"""
@@ -177,7 +177,7 @@ def create_app(config_name='default'):
             cursor.execute("""
                 SELECT table_name 
                 FROM information_schema.tables 
-                WHERE table_schema = 'public'
+                WHERE table_schema = DATABASE()
                 ORDER BY table_name
             """)
             tables = [row[0] for row in cursor.fetchall()]
@@ -253,43 +253,6 @@ def create_app(config_name='default'):
         results.append("<a href='/add-products'>Add Products</a> | <a href='/auth/login'>Login</a> | <a href='/auth/register'>Register</a>")
         
         return "<br>".join(results)
-    
-    # Manual database initialization endpoint (for free tier without Shell)
-    @app.route('/init-db')
-    def init_db_manual():
-        """Manually initialize database - for free tier users without Shell access"""
-        try:
-            from auto_init_db import main as auto_init
-            
-            # Capture output
-            import io
-            import sys
-            old_stdout = sys.stdout
-            sys.stdout = buffer = io.StringIO()
-            
-            # Run initialization
-            success = auto_init()
-            
-            # Get output
-            output = buffer.getvalue()
-            sys.stdout = old_stdout
-            
-            # Format output for HTML
-            html_output = output.replace('\n', '<br>').replace(' ', '&nbsp;')
-            
-            if success:
-                html_output += '<br><br><strong style="color: green;">✓ Database initialized successfully!</strong>'
-                html_output += '<br><br><a href="/test-db">Check database status</a>'
-                html_output += '<br><a href="/auth/register">Go to registration</a>'
-            else:
-                html_output += '<br><br><strong style="color: red;">✗ Initialization failed!</strong>'
-                html_output += '<br><br><a href="/test-db">Check database status</a>'
-            
-            return html_output
-        except Exception as e:
-            import traceback
-            error_trace = traceback.format_exc().replace('\n', '<br>')
-            return f'<strong style="color: red;">Error:</strong><br>{str(e)}<br><br><pre>{error_trace}</pre>', 500
     
     # Debug login endpoint
     @app.route('/debug-login')

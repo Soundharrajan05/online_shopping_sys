@@ -1,21 +1,31 @@
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Editor and temp files
 *.swp
 *.swo
 *.tmp
+.vscode/
+
+# Secrets
 .env
+
+# Local dev only
 run.py
 tests/
 htmlcov/
-.vscode/
-*.md
-*.log
+
+# Database setup scripts (run locally, not on Vercel)
 schema.sql
 init_db.py
 seed_data.py
-build.sh
-run_tests.ps1
-setup_test_db.ps1
-upload_to_github.ps1
+setup_test_db.sql
+
+# Markdown docs
+*.md
+
+# Logs
+*.log

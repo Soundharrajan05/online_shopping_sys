@@ -259,41 +259,28 @@ If you ran the seed data script, you can use these credentials:
 
 ## Vercel Deployment
 
-This project can be deployed on Vercel using Python Serverless Function support. The Vercel configuration is provided in `vercel.json`, and the Flask application entrypoint is located at `api/index.py`.
+This project is deployed on Vercel using Python Serverless Functions with a MySQL database. The Vercel entry point is `api/index.py` and all configuration is in `vercel.json`.
 
-### Deployment Steps
+### Quick Start
 
-1. Install dependencies locally and verify the application:
-   ```bash
-   pip install -r requirements.txt
-   python api/index.py
-   ```
+1. Import the Git repository in [Vercel](https://vercel.com/new).
+2. Set these environment variables in Vercel → Settings → Environment Variables:
 
-2. Create a Vercel project and set the following environment variables:
-   - `FLASK_CONFIG=production`
-   - `SECRET_KEY=<your-secret-key>`
-   - `DATABASE_URL=<your-database-connection-url>`
+   | Variable | Value |
+   |----------|-------|
+   | `SECRET_KEY` | A long random string (run `python -c "import secrets; print(secrets.token_hex(32))"`) |
+   | `DATABASE_URL` | `mysql://user:password@host:3306/database` |
+   | `FLASK_CONFIG` | `production` |
 
-3. Deploy to Vercel:
-   ```bash
-   vercel --prod
-   ```
+3. Click **Deploy**. Vercel auto-detects the Python project.
 
-4. After deployment, open the project URL to access the application.
+### Full Guide
 
-### Vercel Environment Variables
-
-Vercel deployments must use a managed database that is accessible from the Vercel runtime. Local MySQL on your machine will not be available to the deployed app.
-
-- `DATABASE_URL`: Recommended PostgreSQL connection string for Vercel deployments, for example:
-  `postgresql://user:password@host:port/database`
-- `SECRET_KEY`: Flask secret key used for sessions
-- `FLASK_CONFIG`: Set to `production`
-- `PGSSLMODE`: Optional; set to `require` if your PostgreSQL provider requires SSL connections
-
-This app also auto-enables SSL for remote PostgreSQL hosts when `DATABASE_URL` is used without an explicit `sslmode` parameter.
-
-If `DATABASE_URL` is missing during a Vercel deployment, the app will display a clear initialization error instead of failing silently.
+See **[docs/VERCEL_DEPLOYMENT.md](docs/VERCEL_DEPLOYMENT.md)** for:
+- MySQL provider options (PlanetScale, Aiven, Railway, etc.)
+- Step-by-step Vercel CLI deployment
+- Troubleshooting guide
+- Local development setup
 
 ### Administrator Workflow
 

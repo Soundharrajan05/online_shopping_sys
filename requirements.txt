@@ -1,11 +1,8 @@
 # Flask Framework - Web application framework
 Flask==3.0.0
 
-# MySQL Database Connector - Database driver for MySQL
+# MySQL Database Connector - Database driver for MySQL (Vercel deployment)
 mysql-connector-python==8.2.0
-
-# PostgreSQL Database Connector - For Render.com deployment
-psycopg2-binary==2.9.10
 
 # Werkzeug - WSGI utility library (includes password hashing)
 werkzeug==3.0.1
