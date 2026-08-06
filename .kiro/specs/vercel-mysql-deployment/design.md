@@ -3,7 +3,7 @@
 ## Overview
 This design document outlines the technical approach to deploy the Flask online shopping system to Vercel with MySQL database and clean up Render.com-specific files.
 
-## High-Level Architecture
+## Architecture
 
 ### Current State
 ```
@@ -12,6 +12,28 @@ Flask App
 ├── Dual Database Support (PostgreSQL + MySQL)
 ├── Multiple deployment files
 └── Mixed configuration
+```
+
+### Target State
+```
+Flask App on Vercel
+├── Single Platform (Vercel only)
+├── Single Database (MySQL only)
+├── Clean deployment configuration
+└── Streamlined codebase
+```
+
+### Deployment Architecture
+```
+User Request
+    ↓
+Vercel Edge Network
+    ↓
+Serverless Function (api/index.py)
+    ↓
+Flask Application (app/)
+    ↓
+MySQL Database (External Cloud)
 ```
 
 ### Target State
@@ -445,3 +467,109 @@ def get_connection():
 - Multi-region deployment
 - Load testing
 - Performance optimization beyond basics
+
+
+## Components and Interfaces
+
+### api/index.py — Vercel Entry Point
+- Receives all HTTP requests via Vercel's serverless runtime
+- Validates `SECRET_KEY` and `DATABASE_URL` env vars on Vercel production
+- Creates Flask app via `create_app()` factory
+- Returns error page if initialisation fails
+
+### app/database/db_universal.py — MySQL Connection Manager
+- `init_db(config)`: Initialises connection from `DATABASE_URL` or individual `DB_*` vars
+- `get_connection()`: Returns active connection, auto-reconnects on cold start
+- `execute_query(query, params, fetch)`: Runs parameterised queries safely
+- `release_connection(conn)`: No-op kept for API compatibility
+
+### app/database/db.py — Backward-Compatible Re-export
+- Re-exports `UniversalDatabase` as `Database` so all legacy imports work
+- No separate pool — shares the same connection as `db_universal`
+
+### vercel.json — Vercel Router
+- Routes all `/(.*)" requests to `api/index.py`
+- Sets `FLASK_CONFIG=production` as default env var
+
+### config.py — Environment Configuration
+- `DevelopmentConfig`: debug=True, uses local DB vars
+- `ProductionConfig`: debug=False, requires `SECRET_KEY` from env
+- `TestConfig`: uses `shopping_system_test` database
+
+## Data Models
+
+### Environment Variables
+```
+SECRET_KEY      : string  — Flask session signing key (required in production)
+DATABASE_URL    : string  — MySQL connection string: mysql://user:pass@host:port/db
+FLASK_CONFIG    : string  — One of: development | production | test
+DB_HOST         : string  — MySQL host (fallback when DATABASE_URL not set)
+DB_USER         : string  — MySQL username
+DB_PASSWORD     : string  — MySQL password
+DB_NAME         : string  — MySQL database name
+DB_PORT         : integer — MySQL port (default: 3306)
+```
+
+### Database Tables (MySQL)
+```
+users         : user_id, name, email, password(hash), role, created_at
+categories    : category_id, category_name
+products      : product_id, product_name, description, price, stock_quantity, image_url, category_id
+cart          : cart_id, user_id, product_id, quantity
+orders        : order_id, user_id, total_amount, order_date, order_status
+order_items   : order_item_id, order_id, product_id, quantity, price
+```
+
+## Error Handling
+
+### Missing Environment Variables
+- `api/index.py` checks for `SECRET_KEY` and `DATABASE_URL` on Vercel
+- If missing, renders a styled HTML error page with setup instructions
+- Does not crash with a 500 — shows actionable guidance
+
+### Database Connection Failure
+- Connection errors are caught in `db_universal.py`
+- Error is logged via `print()` and re-raised to Flask's error handler
+- Flask returns a 500 error page to the user
+
+### Invalid SQL / Query Errors
+- All queries use parameterised statements (`%s` placeholders)
+- Exceptions trigger `connection.rollback()` before re-raising
+- `app/utils/error_handler.py` logs full tracebacks without exposing them to users
+
+### Cold Start (Serverless)
+- `get_connection()` checks `_is_connection_alive()` via `ping()`
+- Automatically reconnects if the previous connection dropped
+- `before_request` hook ensures DB is ready before every request
+
+## Correctness Properties
+
+### Property 1: DATABASE_URL Connection
+Both `mysql://` and `mysql+mysqlconnector://` URL formats must connect successfully to MySQL.
+
+**Validates: Requirements 2.1**
+
+### Property 2: SQL Parameterisation
+All SQL queries must use `%s` placeholders — no string interpolation allowed anywhere in the codebase.
+
+**Validates: Requirements 2.2**
+
+### Property 3: SECRET_KEY Required in Production
+`SECRET_KEY` must never be `None` in production. `api/index.py` enforces this check before app creation.
+
+**Validates: Requirements 3.1**
+
+### Property 4: No-op release_connection
+`release_connection()` must never close the shared connection — it must be a complete no-op.
+
+**Validates: Requirements 2.3**
+
+### Property 5: Lazy Database Initialisation
+`create_app()` must succeed even when MySQL is unreachable. The DB connects on first request via `before_request`.
+
+**Validates: Requirements 1.1**
+
+### Property 6: No Render.com References
+None of the deleted Render.com files (`render.yaml`, `build.sh`, `Procfile`, etc.) must be referenced anywhere in the active codebase.
+
+**Validates: Requirements 4.1**

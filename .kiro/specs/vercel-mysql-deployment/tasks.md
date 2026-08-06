@@ -86,16 +86,40 @@ This implementation plan covers the migration of the Flask online shopping syste
 - Task 9 (local testing) is optional but highly recommended
 
 ## Task Dependency Graph
-```
-1. Update requirements.txt
-2. Update api/index.py
-3. Update .vercelignore
-   └─> 4. Remove Render files
-5. Verify vercel.json
-6. Verify database layer
-8. Update .env.example
-   └─> 1,2,6,8 -> 9. Test local deployment
 
-1,2,3,4,5,6 -> 7. Create documentation
-   └─> 10. Create checklist
+```json
+{
+  "waves": [
+    {
+      "wave": 1,
+      "tasks": [
+        "1. Update requirements.txt to remove PostgreSQL dependencies",
+        "2. Update api/index.py for MySQL-specific error messages",
+        "3. Update .vercelignore to exclude removed files",
+        "5. Verify vercel.json configuration",
+        "6. Verify database abstraction layer supports MySQL on Vercel",
+        "8. Update .env.example for Vercel deployment"
+      ]
+    },
+    {
+      "wave": 2,
+      "tasks": [
+        "4. Remove Render.com deployment files"
+      ]
+    },
+    {
+      "wave": 3,
+      "tasks": [
+        "9. Test local deployment with MySQL",
+        "7. Create Vercel deployment documentation"
+      ]
+    },
+    {
+      "wave": 4,
+      "tasks": [
+        "10. Create Vercel deployment checklist"
+      ]
+    }
+  ]
+}
 ```

@@ -1,9 +1,12 @@
-# Requirements: Vercel MySQL Deployment
+# Requirements Document
 
-## Overview
+## Introduction
+
 Migrate the Flask online shopping system to Vercel platform using MySQL database and remove all unnecessary deployment files from other platforms (specifically Render.com).
 
-## Functional Requirements
+## Requirements
+
+### Functional Requirements
 
 ### FR-1: Vercel Deployment Configuration
 **Priority:** High  
@@ -153,3 +156,14 @@ Migrate the Flask online shopping system to Vercel platform using MySQL database
 **As a** developer  
 **I want to** have clear documentation for environment variables  
 **So that** I can easily configure the deployment
+
+## Glossary
+
+- **Vercel**: Serverless deployment platform for web applications
+- **MySQL**: Open-source relational database management system
+- **DATABASE_URL**: Connection string for the MySQL database in the format `mysql://user:pass@host:port/db`
+- **SECRET_KEY**: Flask secret key used to sign session cookies
+- **FLASK_CONFIG**: Environment variable controlling which Flask configuration class to use (`development`, `production`, `test`)
+- **Render.com**: Previous deployment platform being replaced by Vercel
+- **Serverless**: Architecture where the platform manages server infrastructure; functions run on demand
+- **db_universal.py**: The MySQL database connection abstraction module used by the app
